@@ -1,0 +1,43 @@
+package tv
+
+import (
+	"github.com/dhickie/go-lgtv/control"
+	"github.com/dhickie/openhub/messaging"
+)
+
+// tvController controlls all TVs under its remit when an appropriate message is received
+type tvController struct {
+	Tvs map[string]*control.LgTv
+}
+
+// subscriber is the callback called when the TV module receives a message
+func (c *tvController) subscriber(msg messaging.Message) {
+	// If we don't know about the device with this ID, then don't do anything
+	tv, ok := c.Tvs[msg.DeviceID]
+	if ok {
+		// Work out which command we need to do based on the type of message
+		switch msg.Type {
+		case messaging.MessageTypeTurnOff:
+			tv.TurnOff()
+			break
+		case messaging.MessageTypeVolumeUp:
+			tv.VolumeUp()
+			break
+		case messaging.MessageTypeVolumeDown:
+			tv.VolumeDown()
+			break
+		case messaging.MessageTypeSetVolume:
+			tv.SetVolume(int(msg.Payload.(float64)))
+			break
+		case messaging.MessageTypeChannelUp:
+			tv.ChannelUp()
+			break
+		case messaging.MessageTypeChannelDown:
+			tv.ChannelDown()
+			break
+		case messaging.MessageTypeSetChannel:
+			tv.SetChannel(int(msg.Payload.(float64)))
+			break
+		}
+	}
+}

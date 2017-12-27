@@ -21,24 +21,24 @@ func setupRoutes() *mux.Router {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api/").Subrouter()
 
-	tv := s.PathPrefix("/tv/").Subrouter()
+	tv := s.PathPrefix("/tv/{deviceId}/").Subrouter()
 	setupTvRoutes(tv)
 
 	return r
 }
 
 func setupTvRoutes(r *mux.Router) {
-	r.HandleFunc("/power/off/", tv.TurnOff)
+	r.HandleFunc("/power/off", tv.TurnOff).Methods("POST")
 
-	r.HandleFunc("/channel/up/", tv.ChannelUp)
-	r.HandleFunc("/channel/down/", tv.ChannelDown)
-	r.HandleFunc("/channel/set/{channel}/", tv.SetChannel)
+	r.HandleFunc("/channel/up", tv.ChannelUp).Methods("POST")
+	r.HandleFunc("/channel/down", tv.ChannelDown).Methods("POST")
+	r.HandleFunc("/channel/set/{channel}", tv.SetChannel).Methods("POST")
 
-	r.HandleFunc("/volume/up/", tv.VolumeUp)
-	r.HandleFunc("/volume/down/", tv.VolumeDown)
-	r.HandleFunc("/volume/set/{volume}/", tv.VolumeDown)
+	r.HandleFunc("/volume/up", tv.VolumeUp).Methods("POST")
+	r.HandleFunc("/volume/down", tv.VolumeDown).Methods("POST")
+	r.HandleFunc("/volume/set/{volume}", tv.SetVolume).Methods("GET")
 
-	r.HandleFunc("/media/play/", tv.Play)
-	r.HandleFunc("/media/pause/", tv.Pause)
-	r.HandleFunc("/media/stop/", tv.Stop)
+	r.HandleFunc("/media/play", tv.Play).Methods("POST")
+	r.HandleFunc("/media/pause", tv.Pause).Methods("POST")
+	r.HandleFunc("/media/stop", tv.Stop).Methods("POST")
 }

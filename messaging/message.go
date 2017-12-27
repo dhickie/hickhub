@@ -16,8 +16,9 @@ const (
 
 // Message is a message sent between different modules
 type Message struct {
-	Type    string      `json:"type"`
-	Payload interface{} `json:"payload"` // The payload will vary depending on the type of message being sent
+	Type     string      `json:"type"`
+	DeviceID string      `json:"device_id"`
+	Payload  interface{} `json:"payload"` // The payload will vary depending on the type of message being sent
 }
 
 // NewMessage returns a new message of the specified type with the specified payload
