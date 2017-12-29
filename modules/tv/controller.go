@@ -1,7 +1,10 @@
 package tv
 
 import (
+	"fmt"
+
 	"github.com/dhickie/go-lgtv/control"
+	"github.com/dhickie/openhub/log"
 	"github.com/dhickie/openhub/messaging"
 )
 
@@ -13,6 +16,7 @@ type tvController struct {
 // subscriber is the callback called when the TV module receives a message
 func (c *tvController) subscriber(msg messaging.Message) {
 	// If we don't know about the device with this ID, then don't do anything
+	log.Info(fmt.Sprintf("TV Controller received message: Type - %v, Device: %v", msg.Type, msg.DeviceID))
 	tv, ok := c.Tvs[msg.DeviceID]
 	if ok {
 		// Work out which command we need to do based on the type of message
@@ -39,5 +43,7 @@ func (c *tvController) subscriber(msg messaging.Message) {
 			tv.SetChannel(int(msg.Payload.(float64)))
 			break
 		}
+	} else {
+		log.Warn(fmt.Sprintf("Received message for unknown device ID: %v", msg.DeviceID))
 	}
 }

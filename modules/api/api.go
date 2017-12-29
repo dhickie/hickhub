@@ -5,16 +5,32 @@ import (
 	"net/http"
 
 	"github.com/dhickie/openhub/config"
+	"github.com/dhickie/openhub/log"
 	"github.com/dhickie/openhub/modules/api/controllers/tv"
 	"github.com/gorilla/mux"
 )
 
+type middleware struct {
+	h http.Handler
+}
+
+func (m middleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Log details of the incoming request
+	log.Info(fmt.Sprintf("Incoming HTTP request: Path - %v, IP Address - %v", r.URL.Path, r.RemoteAddr))
+	m.h.ServeHTTP(w, r)
+}
+
 // Launch configures and then launches the API module
 func Launch(appConfig config.Config) {
+	log.Info("Launching API module")
 	config := appConfig.API
 
+	log.Info("Setting up routes")
 	r := setupRoutes()
-	http.ListenAndServe(fmt.Sprintf(":%v", config.Port), r)
+	err := http.ListenAndServe(fmt.Sprintf(":%v", config.Port), middleware{r})
+	if err != nil {
+		log.Error(fmt.Sprintf("Failed to launch http listener: %v", err.Error()))
+	}
 }
 
 func setupRoutes() *mux.Router {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dhickie/go-membroker"
+	"github.com/dhickie/openhub/log/models"
 )
 
 // Publish publishes the provided message to the specified topic
@@ -37,12 +38,14 @@ func Subscribe(topic string, callback func(Message)) int {
 		// Work out what the payload is based on the type of message
 		var payload interface{}
 		if msg.Type == MessageTypeSetVolume || msg.Type == MessageTypeSetChannel {
-			payload = -1
+			payload = new(int)
+		} else if msg.Type == MessageTypeLog {
+			payload = new(models.Log)
 		}
 
 		// If there's a payload, unmarshal it
 		if payload != nil {
-			err = json.Unmarshal(*raw["payload"], &payload)
+			err = json.Unmarshal(*raw["payload"], payload)
 			if err != nil {
 				return
 			}

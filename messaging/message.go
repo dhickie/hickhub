@@ -12,6 +12,7 @@ const (
 	MessageTypePlay        = "play"
 	MessageTypePause       = "pause"
 	MessageTypeStop        = "stop"
+	MessageTypeLog         = "log"
 )
 
 // Message is a message sent between different modules

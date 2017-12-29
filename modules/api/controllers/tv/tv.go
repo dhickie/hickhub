@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/dhickie/openhub/log"
 	"github.com/dhickie/openhub/messaging"
 	"github.com/gorilla/mux"
 )
@@ -31,6 +32,7 @@ func ChannelDown(w http.ResponseWriter, r *http.Request) {
 func SetChannel(w http.ResponseWriter, r *http.Request) {
 	channel, err := strconv.Atoi(mux.Vars(r)["channel"])
 	if err != nil {
+		log.Error(fmt.Sprintf("Bad request - Failed to convert channel to integer: %v", err.Error()))
 		badRequest(w, err)
 		return
 	}
@@ -55,6 +57,7 @@ func VolumeDown(w http.ResponseWriter, r *http.Request) {
 func SetVolume(w http.ResponseWriter, r *http.Request) {
 	volume, err := strconv.Atoi(mux.Vars(r)["volume"])
 	if err != nil {
+		log.Error(fmt.Sprintf("Bad request - failed to convert volume to integer: %v", err.Error()))
 		badRequest(w, err)
 		return
 	}
@@ -86,6 +89,7 @@ func publishMessage(w http.ResponseWriter, r *http.Request, msg messaging.Messag
 	msg.DeviceID = deviceID
 	err := messaging.Publish(messaging.TopicTv, msg)
 	if err != nil {
+		log.Error(fmt.Sprintf("An error occured publishing the message to the TV topic: %v", err.Error()))
 		http.Error(w, fmt.Sprint(err), 500)
 	}
 }
