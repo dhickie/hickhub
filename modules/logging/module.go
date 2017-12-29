@@ -34,7 +34,7 @@ func Launch(appConfig config.Config) {
 
 func subscriber(msg messaging.Message) {
 	// Just log the log from the payload
-	logger.Log(*msg.Payload.(*models.Log))
+	logger.Log(msg.Payload.(models.Log))
 }
 
 func worker() {

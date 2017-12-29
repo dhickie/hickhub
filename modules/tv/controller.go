@@ -31,7 +31,7 @@ func (c *tvController) subscriber(msg messaging.Message) {
 			tv.VolumeDown()
 			break
 		case messaging.MessageTypeSetVolume:
-			tv.SetVolume(int(msg.Payload.(float64)))
+			tv.SetVolume(msg.Payload.(int))
 			break
 		case messaging.MessageTypeChannelUp:
 			tv.ChannelUp()
@@ -40,7 +40,7 @@ func (c *tvController) subscriber(msg messaging.Message) {
 			tv.ChannelDown()
 			break
 		case messaging.MessageTypeSetChannel:
-			tv.SetChannel(int(msg.Payload.(float64)))
+			tv.SetChannel(msg.Payload.(int))
 			break
 		}
 	} else {

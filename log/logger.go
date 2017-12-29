@@ -44,7 +44,7 @@ func (l *Logger) Flush() {
 	l.logLock.Lock()
 	for _, v := range l.logs {
 		logType := strings.ToUpper(v.Type)
-		l.logFile.WriteString(fmt.Sprintf("%v - %v - %v\r\n", logType, v.Timestamp, v.Message))
+		l.logFile.WriteString(fmt.Sprintf("%v - %v - %v\r\n", v.Timestamp, logType, v.Message))
 	}
 	logCount := len(l.logs)
 	l.logs = l.logs[logCount:]

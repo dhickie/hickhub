@@ -8,19 +8,10 @@ import (
 )
 
 func main() {
-	config := config.Config{
-		API: config.APIConfig{
-			Port: 10001,
-		},
-		Tv: config.TvConfig{
-			Tvs: []config.TvInfo{
-				config.TvInfo{
-					ID:        "tv1",
-					IPAddress: "192.168.1.130",
-					ClientKey: "",
-				},
-			},
-		},
+	// Read in the current configuration
+	config, err := config.ReadConfig()
+	if err != nil {
+		panic(err)
 	}
 
 	// The logging module is a special case - launch it

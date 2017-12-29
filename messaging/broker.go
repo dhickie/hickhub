@@ -52,7 +52,12 @@ func Subscribe(topic string, callback func(Message)) int {
 		}
 
 		// Add the payload to the message and invoke the callback
-		msg.Payload = payload
+		switch payload.(type) {
+		case *int:
+			msg.Payload = *payload.(*int)
+		case *models.Log:
+			msg.Payload = *payload.(*models.Log)
+		}
 		callback(msg)
 	})
 }

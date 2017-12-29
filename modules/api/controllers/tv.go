@@ -1,4 +1,4 @@
-package tv
+package controllers
 
 import (
 	"fmt"
@@ -10,81 +10,85 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// TvController is an empty struct for representing the TV API Controller
+type TvController struct {
+}
+
 // TurnOff sends a message to turn off the TV
-func TurnOff(w http.ResponseWriter, r *http.Request) {
+func (t *TvController) TurnOff(w http.ResponseWriter, r *http.Request) {
 	msg := messaging.NewMessage(messaging.MessageTypeTurnOff, nil)
-	publishMessage(w, r, msg)
+	t.publishMessage(w, r, msg)
 }
 
 // ChannelUp sends a message to go up one channel
-func ChannelUp(w http.ResponseWriter, r *http.Request) {
+func (t *TvController) ChannelUp(w http.ResponseWriter, r *http.Request) {
 	msg := messaging.NewMessage(messaging.MessageTypeChannelUp, nil)
-	publishMessage(w, r, msg)
+	t.publishMessage(w, r, msg)
 }
 
 // ChannelDown sends a message to go down one channel
-func ChannelDown(w http.ResponseWriter, r *http.Request) {
+func (t *TvController) ChannelDown(w http.ResponseWriter, r *http.Request) {
 	msg := messaging.NewMessage(messaging.MessageTypeChannelDown, nil)
-	publishMessage(w, r, msg)
+	t.publishMessage(w, r, msg)
 }
 
 // SetChannel sends a message to set the TV to the specified channel
-func SetChannel(w http.ResponseWriter, r *http.Request) {
+func (t *TvController) SetChannel(w http.ResponseWriter, r *http.Request) {
 	channel, err := strconv.Atoi(mux.Vars(r)["channel"])
 	if err != nil {
 		log.Error(fmt.Sprintf("Bad request - Failed to convert channel to integer: %v", err.Error()))
-		badRequest(w, err)
+		t.badRequest(w, err)
 		return
 	}
 
 	msg := messaging.NewMessage(messaging.MessageTypeSetChannel, channel)
-	publishMessage(w, r, msg)
+	t.publishMessage(w, r, msg)
 }
 
 // VolumeUp sends a message to increase the volume by one
-func VolumeUp(w http.ResponseWriter, r *http.Request) {
+func (t *TvController) VolumeUp(w http.ResponseWriter, r *http.Request) {
 	msg := messaging.NewMessage(messaging.MessageTypeVolumeUp, nil)
-	publishMessage(w, r, msg)
+	t.publishMessage(w, r, msg)
 }
 
 // VolumeDown sends a message to decrease the volume by one
-func VolumeDown(w http.ResponseWriter, r *http.Request) {
+func (t *TvController) VolumeDown(w http.ResponseWriter, r *http.Request) {
 	msg := messaging.NewMessage(messaging.MessageTypeVolumeDown, nil)
-	publishMessage(w, r, msg)
+	t.publishMessage(w, r, msg)
 }
 
 // SetVolume sets the current volume of the TV to the provided value
-func SetVolume(w http.ResponseWriter, r *http.Request) {
+func (t *TvController) SetVolume(w http.ResponseWriter, r *http.Request) {
 	volume, err := strconv.Atoi(mux.Vars(r)["volume"])
 	if err != nil {
 		log.Error(fmt.Sprintf("Bad request - failed to convert volume to integer: %v", err.Error()))
-		badRequest(w, err)
+		t.badRequest(w, err)
 		return
 	}
 
 	msg := messaging.NewMessage(messaging.MessageTypeSetVolume, volume)
-	publishMessage(w, r, msg)
+	t.publishMessage(w, r, msg)
 }
 
 // Play sends a message to do play the TV
-func Play(w http.ResponseWriter, r *http.Request) {
+func (t *TvController) Play(w http.ResponseWriter, r *http.Request) {
 	msg := messaging.NewMessage(messaging.MessageTypePlay, nil)
-	publishMessage(w, r, msg)
+	t.publishMessage(w, r, msg)
 }
 
 // Pause sends a message to pause the TV
-func Pause(w http.ResponseWriter, r *http.Request) {
+func (t *TvController) Pause(w http.ResponseWriter, r *http.Request) {
 	msg := messaging.NewMessage(messaging.MessageTypePause, nil)
-	publishMessage(w, r, msg)
+	t.publishMessage(w, r, msg)
 }
 
 // Stop sends a message to stop the TV
-func Stop(w http.ResponseWriter, r *http.Request) {
+func (t *TvController) Stop(w http.ResponseWriter, r *http.Request) {
 	msg := messaging.NewMessage(messaging.MessageTypeStop, nil)
-	publishMessage(w, r, msg)
+	t.publishMessage(w, r, msg)
 }
 
-func publishMessage(w http.ResponseWriter, r *http.Request, msg messaging.Message) {
+func (t *TvController) publishMessage(w http.ResponseWriter, r *http.Request, msg messaging.Message) {
 	deviceID := mux.Vars(r)["deviceId"]
 	msg.DeviceID = deviceID
 	err := messaging.Publish(messaging.TopicTv, msg)
@@ -94,6 +98,6 @@ func publishMessage(w http.ResponseWriter, r *http.Request, msg messaging.Messag
 	}
 }
 
-func badRequest(w http.ResponseWriter, err error) {
+func (t *TvController) badRequest(w http.ResponseWriter, err error) {
 	http.Error(w, fmt.Sprint(err), 400)
 }

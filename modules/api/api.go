@@ -6,7 +6,7 @@ import (
 
 	"github.com/dhickie/openhub/config"
 	"github.com/dhickie/openhub/log"
-	"github.com/dhickie/openhub/modules/api/controllers/tv"
+	"github.com/dhickie/openhub/modules/api/controllers"
 	"github.com/gorilla/mux"
 )
 
@@ -44,6 +44,7 @@ func setupRoutes() *mux.Router {
 }
 
 func setupTvRoutes(r *mux.Router) {
+	tv := new(controllers.TvController)
 	r.HandleFunc("/power/off", tv.TurnOff).Methods("POST")
 
 	r.HandleFunc("/channel/up", tv.ChannelUp).Methods("POST")
