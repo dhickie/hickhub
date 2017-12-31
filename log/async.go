@@ -3,8 +3,8 @@ package log
 import (
 	"time"
 
-	"github.com/dhickie/openhub/log/models"
-	"github.com/dhickie/openhub/messaging"
+	"github.com/dhickie/hickhub/log/models"
+	"github.com/dhickie/hickhub/messaging"
 )
 
 // Info publishes an Info logging message to be processed by the logging module

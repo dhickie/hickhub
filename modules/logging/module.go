@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dhickie/openhub/config"
-	"github.com/dhickie/openhub/log"
-	"github.com/dhickie/openhub/log/models"
-	"github.com/dhickie/openhub/messaging"
+	"github.com/dhickie/hickhub/config"
+	"github.com/dhickie/hickhub/log"
+	"github.com/dhickie/hickhub/log/models"
+	"github.com/dhickie/hickhub/messaging"
 )
 
 var (

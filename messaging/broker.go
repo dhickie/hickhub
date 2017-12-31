@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dhickie/go-membroker"
-	"github.com/dhickie/openhub/log/models"
+	"github.com/dhickie/hickhub/log/models"
 )
 
 // Publish publishes the provided message to the specified topic

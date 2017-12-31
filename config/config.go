@@ -1,7 +1,9 @@
 package config
 
-import "io/ioutil"
-import "encoding/json"
+import (
+	"encoding/json"
+	"io/ioutil"
+)
 
 // Config represents the overall config of the application
 type Config struct {

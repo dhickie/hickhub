@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/dhickie/openhub/config"
-	"github.com/dhickie/openhub/modules/api"
-	"github.com/dhickie/openhub/modules/logging"
-	"github.com/dhickie/openhub/modules/tv"
+	"github.com/dhickie/hickhub/config"
+	"github.com/dhickie/hickhub/modules/api"
+	"github.com/dhickie/hickhub/modules/logging"
+	"github.com/dhickie/hickhub/modules/tv"
 )
 
 func main() {

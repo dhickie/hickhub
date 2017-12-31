@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dhickie/openhub/config"
-	"github.com/dhickie/openhub/log"
-	"github.com/dhickie/openhub/modules/api/controllers"
+	"github.com/dhickie/hickhub/config"
+	"github.com/dhickie/hickhub/log"
+	"github.com/dhickie/hickhub/modules/api/controllers"
 	"github.com/gorilla/mux"
 )
 

@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/dhickie/go-lgtv/control"
-	"github.com/dhickie/openhub/config"
-	"github.com/dhickie/openhub/log"
-	"github.com/dhickie/openhub/messaging"
+	"github.com/dhickie/hickhub/config"
+	"github.com/dhickie/hickhub/log"
+	"github.com/dhickie/hickhub/messaging"
 )
 
 var controller tvController

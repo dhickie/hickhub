@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/dhickie/openhub/log/models"
+	"github.com/dhickie/hickhub/log/models"
 )
 
 // Logger is the logger object which stores logs before being persisted to disk

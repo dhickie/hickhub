@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/dhickie/go-lgtv/control"
-	"github.com/dhickie/openhub/log"
-	"github.com/dhickie/openhub/messaging"
+	"github.com/dhickie/hickhub/log"
+	"github.com/dhickie/hickhub/messaging"
 )
 
 // tvController controlls all TVs under its remit when an appropriate message is received

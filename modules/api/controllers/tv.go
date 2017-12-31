@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/dhickie/openhub/log"
-	"github.com/dhickie/openhub/messaging"
+	"github.com/dhickie/hickhub/log"
+	"github.com/dhickie/hickhub/messaging"
 	"github.com/gorilla/mux"
 )
 
