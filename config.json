@@ -2,13 +2,15 @@
     "api":{
         "port":10001
     },
-    "tv":{
-        "tvs":[
-            {
-                "id":"tv1",
+    "devices":[
+        {
+            "id":"tv1",
+            "type":"TV",
+            "sub_type":"WebOsTV",
+            "info": {
                 "ip_address":"192.168.1.130",
                 "client_key":"7668cb15d16a1a319f3731a9264b700b"
             }
-        ]
-    }
+        }
+    ]
 }
