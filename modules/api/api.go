@@ -26,36 +26,22 @@ func Launch(appConfig config.Config) {
 	config := appConfig.API
 
 	log.Info("Setting up routes")
-	r := setupRoutes()
+	r := setupRoutes(appConfig)
 	err := http.ListenAndServe(fmt.Sprintf(":%v", config.Port), middleware{r})
 	if err != nil {
 		log.Error(fmt.Sprintf("Failed to launch http listener: %v", err.Error()))
 	}
 }
 
-func setupRoutes() *mux.Router {
+func setupRoutes(appConfig config.Config) *mux.Router {
+	disc := controllers.NewDiscoveryController(appConfig)
+	cmd := controllers.NewCommandController(appConfig)
+
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api/").Subrouter()
 
-	tv := s.PathPrefix("/tv/{deviceId}/").Subrouter()
-	setupTvRoutes(tv)
+	s.HandleFunc("/devices", disc.GetDevices).Methods("GET")
+	s.HandleFunc(`/device/{id}/command/{cmd:[a-zA-Z0-9=\-\/]+}`, cmd.ControlDevice).Methods("POST")
 
 	return r
-}
-
-func setupTvRoutes(r *mux.Router) {
-	tv := new(controllers.TvController)
-	r.HandleFunc("/power/off", tv.TurnOff).Methods("POST")
-
-	r.HandleFunc("/channel/up", tv.ChannelUp).Methods("POST")
-	r.HandleFunc("/channel/down", tv.ChannelDown).Methods("POST")
-	r.HandleFunc("/channel/set/{channel}", tv.SetChannel).Methods("POST")
-
-	r.HandleFunc("/volume/up", tv.VolumeUp).Methods("POST")
-	r.HandleFunc("/volume/down", tv.VolumeDown).Methods("POST")
-	r.HandleFunc("/volume/set/{volume}", tv.SetVolume).Methods("GET")
-
-	r.HandleFunc("/media/play", tv.Play).Methods("POST")
-	r.HandleFunc("/media/pause", tv.Pause).Methods("POST")
-	r.HandleFunc("/media/stop", tv.Stop).Methods("POST")
 }

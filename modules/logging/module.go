@@ -1,12 +1,14 @@
 package logging
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/dhickie/hickhub/messaging/payloads"
+
 	"github.com/dhickie/hickhub/config"
 	"github.com/dhickie/hickhub/log"
-	"github.com/dhickie/hickhub/log/models"
 	"github.com/dhickie/hickhub/messaging"
 )
 
@@ -34,7 +36,13 @@ func Launch(appConfig config.Config) {
 
 func subscriber(msg messaging.Message) {
 	// Just log the log from the payload
-	logger.Log(msg.Payload.(models.Log))
+	log := new(payloads.LogPayload)
+	err := json.Unmarshal([]byte(msg.Payload), log)
+	if err != nil {
+		// Just swallow, not like we can log it...
+	}
+
+	logger.Log(*log)
 }
 
 func worker() {

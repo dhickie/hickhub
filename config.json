@@ -7,6 +7,15 @@
             "id":"tv1",
             "type":"TV",
             "sub_type":"WebOsTV",
+            "capabilities":[
+                "volume/up",
+                "volume/down",
+                "volume/set",
+                "channel/up",
+                "channel/down",
+                "channel/set",
+                "power/off"
+            ],
             "info": {
                 "ip_address":"192.168.1.130",
                 "client_key":"7668cb15d16a1a319f3731a9264b700b"

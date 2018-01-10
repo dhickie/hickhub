@@ -1,49 +1,67 @@
 package tv
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/dhickie/go-lgtv/control"
 	"github.com/dhickie/hickhub/log"
 	"github.com/dhickie/hickhub/messaging"
+	"github.com/dhickie/hickhub/messaging/payloads"
+	"github.com/dhickie/hickhub/models"
 )
 
 // tvController controlls all TVs under its remit when an appropriate message is received
 type tvController struct {
-	Tvs map[string]*control.LgTv
+	Tvs        map[string]*control.LgTv
+	ClientKeys map[string]string
 }
 
 // subscriber is the callback called when the TV module receives a message
 func (c *tvController) subscriber(msg messaging.Message) {
-	// If we don't know about the device with this ID, then don't do anything
-	log.Info(fmt.Sprintf("TV Controller received message: Type - %v, Device: %v", msg.Type, msg.DeviceID))
-	tv, ok := c.Tvs[msg.DeviceID]
+	// We know this is a command message, so unmarshal the payload as such
+	cmd := new(payloads.CommandPayload)
+	err := json.Unmarshal([]byte(msg.Payload), cmd)
+	if err != nil {
+		log.Error(fmt.Sprintf("An error occured unmarshalling the command payload: %v", err))
+		return
+	}
+
+	// Perform the provided command on the TV with the given device ID
+	tv, ok := c.Tvs[cmd.DeviceID]
 	if ok {
-		// Work out which command we need to do based on the type of message
-		switch msg.Type {
-		case messaging.MessageTypeTurnOff:
-			tv.TurnOff()
-			break
-		case messaging.MessageTypeVolumeUp:
-			tv.VolumeUp()
-			break
-		case messaging.MessageTypeVolumeDown:
-			tv.VolumeDown()
-			break
-		case messaging.MessageTypeSetVolume:
-			tv.SetVolume(msg.Payload.(int))
-			break
-		case messaging.MessageTypeChannelUp:
-			tv.ChannelUp()
-			break
-		case messaging.MessageTypeChannelDown:
-			tv.ChannelDown()
-			break
-		case messaging.MessageTypeSetChannel:
-			tv.SetChannel(msg.Payload.(int))
-			break
+		switch cmd.Command {
+		case models.CommandTurnOff:
+			err = tv.TurnOff()
+		case models.CommandVolumeUp:
+			err = tv.VolumeUp()
+		case models.CommandVolumeDown:
+			err = tv.VolumeDown()
+		case models.CommandSetVolume:
+			val, err := strconv.Atoi(cmd.Detail)
+			if err != nil {
+				log.Error(fmt.Sprintf("An error occured getting the target volume: %v", err))
+				return
+			}
+			err = tv.SetVolume(val)
+		case models.CommandChannelUp:
+			err = tv.ChannelUp()
+		case models.CommandChannelDown:
+			err = tv.ChannelDown()
+		case models.CommandSetChannel:
+			val, err := strconv.Atoi(cmd.Detail)
+			if err != nil {
+				log.Error(fmt.Sprintf("An error occured getting the target channel number: %v", err))
+				return
+			}
+			err = tv.SetChannel(val)
+		}
+
+		if err != nil {
+			log.Error(fmt.Sprintf("An error occured performing the requested TV operation: %v", err))
 		}
 	} else {
-		log.Warn(fmt.Sprintf("Received message for unknown device ID: %v", msg.DeviceID))
+		log.Error(fmt.Sprintf("Received message for unknown device ID: %v", cmd.DeviceID))
 	}
 }

@@ -14,33 +14,38 @@ var controller tvController
 // Launch launches the TV module using the specified config
 func Launch(appConfig config.Config) {
 	log.Info("Launching TV module")
-	tvConfig := appConfig.Tv
+	devices := appConfig.Devices
 
 	// Create the TV objects using the provided config
 	log.Info("Creating TV objects")
 	tvMap := make(map[string]*control.LgTv)
-	for _, v := range tvConfig.Tvs {
-		tv, err := control.NewTV(v.IPAddress)
-		if err != nil {
-			log.Error(fmt.Sprintf("Error creating TV at %v: %v", v.IPAddress, err.Error()))
-			continue
-		}
+	keyMap := make(map[string]string)
 
-		tvMap[v.ID] = &tv
-	}
+	for _, v := range devices {
+		if v.Type == config.TypeTv && v.SubType == config.SubTypeWebOsTv {
+			info := v.Info.(*config.WebOsTvDeviceInfo)
+			tv, err := control.NewTV(info.IPAddress)
+			if err != nil {
+				log.Error(fmt.Sprintf("Error creating TV at %v: %v", info.IPAddress, err.Error()))
+				continue
+			}
 
-	// Connect to each TV using client key from the TV config
-	log.Info("Connecting to TVs")
-	for _, v := range tvConfig.Tvs {
-		_, err := tvMap[v.ID].Connect(v.ClientKey)
-		if err != nil {
-			log.Error(fmt.Sprintf("An error occured connecting to TV at %v: %v", v.IPAddress, err.Error()))
+			// Try to connect to the TV using the client key from the config
+			_, err = tv.Connect(info.ClientKey)
+			if err != nil {
+				// No biggie if we can't connect - it might not be turned on
+				log.Warn(fmt.Sprintf("Unable to connect to TV at %v: %v", info.IPAddress, err.Error()))
+			}
+
+			tvMap[v.ID] = &tv
+			keyMap[v.ID] = info.ClientKey
 		}
 	}
 
 	// Setup the controller
 	controller = tvController{
-		Tvs: tvMap,
+		Tvs:        tvMap,
+		ClientKeys: keyMap,
 	}
 
 	// Subscribe the controller to messages on the TV topic

@@ -53,22 +53,30 @@ func ReadConfig() (Config, error) {
 			return *config, err
 		}
 
-		v.Info = info
+		config.Devices[i].Info = info
 	}
 
 	return *config, nil
 }
 
 func unmarshalInfo(raw []byte, deviceType string, deviceSubType string) (interface{}, error) {
+	// Get the raw info json
+	var rawDevice map[string]*json.RawMessage
+	err := json.Unmarshal(raw, &rawDevice)
+	if err != nil {
+		return nil, err
+	}
+	rawInfo := rawDevice["info"]
+
 	switch deviceType {
 	case TypeTv:
-		return unmarshalTvInfo(raw, deviceSubType)
+		return unmarshalTvInfo(rawInfo, deviceSubType)
 	default:
 		return nil, ErrUnknownDeviceType
 	}
 }
 
-func unmarshalTvInfo(raw []byte, tvType string) (interface{}, error) {
+func unmarshalTvInfo(raw *json.RawMessage, tvType string) (interface{}, error) {
 	var info interface{}
 	switch tvType {
 	case SubTypeWebOsTv:
@@ -77,7 +85,7 @@ func unmarshalTvInfo(raw []byte, tvType string) (interface{}, error) {
 		return nil, ErrUnknownDeviceSubType
 	}
 
-	err := json.Unmarshal(raw, info)
+	err := json.Unmarshal(*raw, info)
 	if err != nil {
 		return nil, err
 	}

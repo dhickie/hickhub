@@ -3,22 +3,21 @@ package log
 import (
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 
-	"github.com/dhickie/hickhub/log/models"
+	"github.com/dhickie/hickhub/messaging/payloads"
 )
 
 // Logger is the logger object which stores logs before being persisted to disk
 type Logger struct {
-	logs    []models.Log
+	logs    []payloads.LogPayload
 	logLock *sync.Mutex
 	logFile *os.File
 }
 
 // NewLogger creates a new logger pointing to the specified file
 func NewLogger(fileName string) (Logger, error) {
-	logs := make([]models.Log, 0)
+	logs := make([]payloads.LogPayload, 0)
 	logFile, err := openFile(fileName)
 	if err != nil {
 		return Logger{}, err
@@ -32,7 +31,7 @@ func NewLogger(fileName string) (Logger, error) {
 }
 
 // Log adds the specified log object to the logger
-func (l *Logger) Log(log models.Log) {
+func (l *Logger) Log(log payloads.LogPayload) {
 	l.logLock.Lock()
 	l.logs = append(l.logs, log)
 	l.logLock.Unlock()
@@ -43,8 +42,7 @@ func (l *Logger) Flush() {
 	// Lock the logs, then write them out line by line
 	l.logLock.Lock()
 	for _, v := range l.logs {
-		logType := strings.ToUpper(v.Type)
-		l.logFile.WriteString(fmt.Sprintf("%v - %v - %v\r\n", v.Timestamp, logType, v.Message))
+		l.logFile.WriteString(fmt.Sprintf("%v - %v - %v\r\n", v.Timestamp, v.Type, v.Message))
 	}
 	logCount := len(l.logs)
 	l.logs = l.logs[logCount:]
