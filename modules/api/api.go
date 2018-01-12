@@ -29,7 +29,7 @@ func Launch(appConfig config.Config) {
 	r := setupRoutes(appConfig)
 	err := http.ListenAndServe(fmt.Sprintf(":%v", config.Port), middleware{r})
 	if err != nil {
-		log.Error(fmt.Sprintf("Failed to launch http listener: %v", err.Error()))
+		panic(fmt.Sprintf("Failed to launch http listener: %v", err.Error()))
 	}
 }
 
