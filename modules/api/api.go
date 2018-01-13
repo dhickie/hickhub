@@ -41,7 +41,7 @@ func setupRoutes(appConfig config.Config) *mux.Router {
 	s := r.PathPrefix("/api/").Subrouter()
 
 	s.HandleFunc("/devices", disc.GetDevices).Methods("GET")
-	s.HandleFunc(`/device/{id}/command/{cmd:[a-zA-Z0-9=\-\/]+}`, cmd.ControlDevice).Methods("POST")
+	s.HandleFunc(`/device/{id}/{state}/{cmd}`, cmd.ControlDevice).Methods("POST")
 
 	return r
 }

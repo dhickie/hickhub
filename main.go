@@ -4,6 +4,7 @@ import (
 	"github.com/dhickie/hickhub/config"
 	"github.com/dhickie/hickhub/modules/api"
 	"github.com/dhickie/hickhub/modules/logging"
+	"github.com/dhickie/hickhub/modules/messenger"
 	"github.com/dhickie/hickhub/modules/tv"
 )
 
@@ -20,6 +21,7 @@ func main() {
 
 	// Launch the Modules
 	go api.Launch(config)
+	go messenger.Launch(config)
 	go tv.Launch(config)
 
 	select {}
