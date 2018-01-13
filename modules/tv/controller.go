@@ -40,7 +40,7 @@ func (c *tvController) subscriber(msg messaging.Message) {
 	if tv, ok := c.Tvs[cmd.DeviceID]; ok {
 		switch cmd.State {
 		case models.StateVolume:
-			err = handleVolumeCommand(tv, cmd.Command, cmd.Detail)
+			err = nil //handleVolumeCommand(tv, cmd.Command, cmd.Detail)
 			if err == nil {
 				var volState models.VolumeState
 				volState, err = getVolumeState(tv)
@@ -49,9 +49,24 @@ func (c *tvController) subscriber(msg messaging.Message) {
 				deviceState.State = volState
 			}
 		case models.StateChannel:
-			err = handleChannelCommand(tv, cmd.Command, cmd.Detail)
+			err = nil //handleChannelCommand(tv, cmd.Command, cmd.Detail)
+			if err == nil {
+				var chanState models.ChannelState
+				chanState, err = getChannelState(tv)
+
+				deviceState.Type = models.StateChannel
+				deviceState.State = chanState
+			}
 		case models.StatePower:
-			err = handlePowerCommand(tv, cmd.Command, cmd.Detail)
+			err = nil //handlePowerCommand(tv, cmd.Command, cmd.Detail)
+			if err == nil {
+				powerOn := false
+				if cmd.Command == models.CommandOn {
+					powerOn = true
+				}
+				deviceState.Type = models.StatePower
+				deviceState.State = models.PowerState{PowerOn: powerOn}
+			}
 		}
 
 		if err != nil {
@@ -127,6 +142,19 @@ func handleChannelCommand(tv *control.LgTv, command string, detail string) error
 	}
 
 	return ErrCommandUnsupported
+}
+
+func getChannelState(tv *control.LgTv) (models.ChannelState, error) {
+	// Get the current channel
+	channel, err := tv.GetCurrentChannel()
+	if err != nil {
+		return models.ChannelState{}, err
+	}
+
+	return models.ChannelState{
+		ChannelName:   channel.ChannelName,
+		ChannelNumber: channel.ChannelNumber,
+	}, nil
 }
 
 func handlePowerCommand(tv *control.LgTv, command string, detail string) error {

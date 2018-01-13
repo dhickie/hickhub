@@ -18,3 +18,14 @@ type VolumeState struct {
 	Volume  int  `json:"volume"`
 	IsMuted bool `json:"is_muted"`
 }
+
+// PowerState represents the current power state of a device
+type PowerState struct {
+	PowerOn bool `json:"power_on"`
+}
+
+// ChannelState represents the current channel state of a device
+type ChannelState struct {
+	ChannelNumber int    `json:"channel_number"`
+	ChannelName   string `json:"channel_name"`
+}

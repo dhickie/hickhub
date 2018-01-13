@@ -34,6 +34,8 @@ var mod module
 // Launch launches the messenger module.
 func Launch(appConfig config.Config) {
 	// Connect to the NATS server
+	log.Info("Launching messenger module")
+	log.Info("Connecting to messenger server")
 	server := appConfig.Messaging.Server
 	nc, err := nats.Connect(server)
 	if err != nil {
@@ -48,6 +50,7 @@ func Launch(appConfig config.Config) {
 	}
 
 	// Subscribe to the topic
+	log.Info("Subscribing to messenger subject")
 	sub, err := nc.Subscribe(appConfig.Auth.Key, mod.internetSubscriber)
 	if err != nil {
 		panic("Failed to subscribe to messaging topic")
@@ -65,7 +68,7 @@ func (module *module) internetSubscriber(m *nats.Msg) {
 	}
 
 	// Make the correct request for the API module
-	url := fmt.Sprintf("http://localhost:%v/%v", module.APIPort, msg.Path)
+	url := fmt.Sprintf("http://localhost:%v/api/%v", module.APIPort, msg.Path)
 	request, err := http.NewRequest(msg.Method, url, bytes.NewBuffer([]byte(msg.Body)))
 	if err != nil {
 		log.Error(fmt.Sprintf("An error creating the API request: %v", err.Error()))
