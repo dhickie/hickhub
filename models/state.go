@@ -2,9 +2,10 @@ package models
 
 // Constants for all the possible types of state to be read or modified
 const (
-	StatePower   = "power"
-	StateVolume  = "volume"
-	StateChannel = "channel"
+	StatePower    = "power"
+	StateVolume   = "volume"
+	StateChannel  = "channel"
+	StatePlayback = "playback"
 )
 
 // DeviceState represents the current state of a particular state component of the device

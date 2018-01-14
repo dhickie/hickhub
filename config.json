@@ -27,13 +27,19 @@
                     "set",
                     "adjust"
                 ],
+                "playback":[
+                    "play",
+                    "pause",
+                    "rewind",
+                    "fastforward"
+                ],
                 "power":[
                     "off"
                 ]
             },
             "info": {
                 "ip_address":"192.168.1.130",
-                "client_key":"7668cb15d16a1a319f3731a9264b700b"
+                "client_key":"dc51c7c1b0d8cad03b4bdb648d450629"
             }
         }
     ]

@@ -67,6 +67,9 @@ func (c *tvController) subscriber(msg messaging.Message) {
 				deviceState.Type = models.StatePower
 				deviceState.State = models.PowerState{PowerOn: powerOn}
 			}
+		case models.StatePlayback:
+			err = handlePlaybackCommand(tv, cmd.Command, cmd.Detail)
+			// There's no device state for playback
 		}
 
 		if err != nil {
@@ -157,16 +160,15 @@ func getVolumeState(tv *control.LgTv) (models.VolumeState, error) {
 func handleChannelCommand(tv *control.LgTv, command string, detail string) error {
 	switch command {
 	case models.CommandUp:
-		return nil //tv.ChannelUp()
+		return tv.ChannelUp()
 	case models.CommandDown:
-		return nil //tv.ChannelDown()
+		return tv.ChannelDown()
 	case models.CommandSet:
 		val, err := strconv.Atoi(detail)
 		if err != nil {
 			return err
 		}
-		val = val
-		return nil //tv.SetChannel(val)
+		return tv.SetChannel(val)
 	case models.CommandAdjust:
 		// Work out how many channels to change by
 		val, err := strconv.Atoi(detail)
@@ -185,7 +187,7 @@ func handleChannelCommand(tv *control.LgTv, command string, detail string) error
 		if newChannel < 0 {
 			newChannel = 0
 		}
-		return nil //tv.SetChannel(newChannel)
+		return tv.SetChannel(newChannel)
 	}
 
 	return ErrCommandUnsupported
@@ -208,6 +210,21 @@ func handlePowerCommand(tv *control.LgTv, command string, detail string) error {
 	switch command {
 	case models.CommandOff:
 		return tv.TurnOff()
+	}
+
+	return ErrCommandUnsupported
+}
+
+func handlePlaybackCommand(tv *control.LgTv, command string, detail string) error {
+	switch command {
+	case models.CommandPlay:
+		return tv.Play()
+	case models.CommandPause:
+		return tv.Pause()
+	case models.CommandFastForward:
+		return tv.FastForward()
+	case models.CommandRewind:
+		return tv.Rewind()
 	}
 
 	return ErrCommandUnsupported
