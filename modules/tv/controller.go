@@ -40,7 +40,7 @@ func (c *tvController) subscriber(msg messaging.Message) {
 	if tv, ok := c.Tvs[cmd.DeviceID]; ok {
 		switch cmd.State {
 		case models.StateVolume:
-			err = nil //handleVolumeCommand(tv, cmd.Command, cmd.Detail)
+			err = handleVolumeCommand(tv, cmd.Command, cmd.Detail)
 			if err == nil {
 				var volState models.VolumeState
 				volState, err = getVolumeState(tv)
@@ -49,7 +49,7 @@ func (c *tvController) subscriber(msg messaging.Message) {
 				deviceState.State = volState
 			}
 		case models.StateChannel:
-			err = nil //handleChannelCommand(tv, cmd.Command, cmd.Detail)
+			err = handleChannelCommand(tv, cmd.Command, cmd.Detail)
 			if err == nil {
 				var chanState models.ChannelState
 				chanState, err = getChannelState(tv)
@@ -58,7 +58,7 @@ func (c *tvController) subscriber(msg messaging.Message) {
 				deviceState.State = chanState
 			}
 		case models.StatePower:
-			err = nil //handlePowerCommand(tv, cmd.Command, cmd.Detail)
+			err = handlePowerCommand(tv, cmd.Command, cmd.Detail)
 			if err == nil {
 				powerOn := false
 				if cmd.Command == models.CommandOn {
