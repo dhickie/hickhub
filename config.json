@@ -17,7 +17,9 @@
                 "volume":[
                     "up",
                     "down",
-                    "set"
+                    "set",
+                    "adjust",
+                    "setmute"
                 ],
                 "channel":[
                     "up",

@@ -93,6 +93,12 @@ func (c *tvController) subscriber(msg messaging.Message) {
 
 func handleVolumeCommand(tv *control.LgTv, command string, detail string) error {
 	switch command {
+	case models.CommandSetMute:
+		isMute, err := strconv.ParseBool(detail)
+		if err != nil {
+			return err
+		}
+		return tv.SetMute(isMute)
 	case models.CommandUp:
 		return tv.VolumeUp()
 	case models.CommandDown:
@@ -103,6 +109,27 @@ func handleVolumeCommand(tv *control.LgTv, command string, detail string) error 
 			return err
 		}
 		return tv.SetVolume(val)
+	case models.CommandAdjust:
+		// Get how much we want to adjust by
+		adjAmount, err := strconv.Atoi(detail)
+		if err != nil {
+			return err
+		}
+
+		// Get the current volume
+		currentVol, err := tv.GetVolume()
+		if err != nil {
+			return err
+		}
+
+		// Set it to the new value
+		newVol := currentVol + adjAmount
+		if newVol < 0 {
+			newVol = 0
+		} else if newVol > 100 {
+			newVol = 100
+		}
+		return tv.SetVolume(newVol)
 	}
 
 	return ErrCommandUnsupported
