@@ -157,15 +157,35 @@ func getVolumeState(tv *control.LgTv) (models.VolumeState, error) {
 func handleChannelCommand(tv *control.LgTv, command string, detail string) error {
 	switch command {
 	case models.CommandUp:
-		return tv.ChannelUp()
+		return nil //tv.ChannelUp()
 	case models.CommandDown:
-		return tv.ChannelDown()
+		return nil //tv.ChannelDown()
 	case models.CommandSet:
 		val, err := strconv.Atoi(detail)
 		if err != nil {
 			return err
 		}
-		return tv.SetChannel(val)
+		val = val
+		return nil //tv.SetChannel(val)
+	case models.CommandAdjust:
+		// Work out how many channels to change by
+		val, err := strconv.Atoi(detail)
+		if err != nil {
+			return err
+		}
+
+		// Get the current channel
+		channel, err := tv.GetCurrentChannel()
+		if err != nil {
+			return err
+		}
+
+		// Adjust the channel
+		newChannel := channel.ChannelNumber + val
+		if newChannel < 0 {
+			newChannel = 0
+		}
+		return nil //tv.SetChannel(newChannel)
 	}
 
 	return ErrCommandUnsupported
