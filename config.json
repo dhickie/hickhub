@@ -33,6 +33,9 @@
                     "rewind",
                     "fastforward"
                 ],
+                "input":[
+                    "set"
+                ],
                 "power":[
                     "off"
                 ]

@@ -6,6 +6,7 @@ const (
 	StateVolume   = "volume"
 	StateChannel  = "channel"
 	StatePlayback = "playback"
+	StateInput    = "input"
 )
 
 // DeviceState represents the current state of a particular state component of the device
@@ -29,4 +30,9 @@ type PowerState struct {
 type ChannelState struct {
 	ChannelNumber int    `json:"channel_number"`
 	ChannelName   string `json:"channel_name"`
+}
+
+// InputState represents the state of a device with input state
+type InputState struct {
+	InputName string `json:"input_name"`
 }

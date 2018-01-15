@@ -11,6 +11,7 @@ import (
 	"github.com/dhickie/hickhub/messaging"
 	"github.com/dhickie/hickhub/messaging/payloads"
 	"github.com/dhickie/hickhub/models"
+	"github.com/dhickie/hickhub/utils"
 )
 
 // ErrCommandUnsupported is returned when a requested command is not supported by the TV
@@ -70,6 +71,12 @@ func (c *tvController) subscriber(msg messaging.Message) {
 		case models.StatePlayback:
 			err = handlePlaybackCommand(tv, cmd.Command, cmd.Detail)
 			// There's no device state for playback
+		case models.StateInput:
+			name, err := handleInputCommand(tv, cmd.Command, cmd.Detail)
+			if err == nil {
+				deviceState.Type = models.StateInput
+				deviceState.State = models.InputState{InputName: name}
+			}
 		}
 
 		if err != nil {
@@ -107,14 +114,16 @@ func handleVolumeCommand(tv *control.LgTv, command string, detail string) error 
 	case models.CommandDown:
 		return tv.VolumeDown()
 	case models.CommandSet:
-		val, err := strconv.Atoi(detail)
+		var val int
+		err := json.Unmarshal([]byte(detail), &val)
 		if err != nil {
 			return err
 		}
 		return tv.SetVolume(val)
 	case models.CommandAdjust:
 		// Get how much we want to adjust by
-		adjAmount, err := strconv.Atoi(detail)
+		var val int
+		err := json.Unmarshal([]byte(detail), &val)
 		if err != nil {
 			return err
 		}
@@ -126,7 +135,7 @@ func handleVolumeCommand(tv *control.LgTv, command string, detail string) error 
 		}
 
 		// Set it to the new value
-		newVol := currentVol + adjAmount
+		newVol := currentVol + val
 		if newVol < 0 {
 			newVol = 0
 		} else if newVol > 100 {
@@ -164,14 +173,16 @@ func handleChannelCommand(tv *control.LgTv, command string, detail string) error
 	case models.CommandDown:
 		return tv.ChannelDown()
 	case models.CommandSet:
-		val, err := strconv.Atoi(detail)
+		var val int
+		err := json.Unmarshal([]byte(detail), &val)
 		if err != nil {
 			return err
 		}
 		return tv.SetChannel(val)
 	case models.CommandAdjust:
 		// Work out how many channels to change by
-		val, err := strconv.Atoi(detail)
+		var val int
+		err := json.Unmarshal([]byte(detail), &val)
 		if err != nil {
 			return err
 		}
@@ -228,4 +239,32 @@ func handlePlaybackCommand(tv *control.LgTv, command string, detail string) erro
 	}
 
 	return ErrCommandUnsupported
+}
+
+func handleInputCommand(tv *control.LgTv, command string, detail string) (string, error) {
+	switch command {
+	case models.CommandSet:
+		// Get the current list of possible inputs
+		inputs, err := tv.ListExternalInputs()
+		if err != nil {
+			return "", err
+		}
+
+		// Find the match closest to the specified target
+		var target string
+		err = json.Unmarshal([]byte(detail), &target)
+		if err != nil {
+			return "", err
+		}
+		match, err := utils.MatchInput(target, inputs)
+		if err != nil {
+			return "", err
+		}
+
+		// Set the input to the closest match
+		err = tv.SwitchInput(match.ID)
+		return match.ID, err
+	}
+
+	return "", ErrCommandUnsupported
 }
