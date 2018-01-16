@@ -221,6 +221,8 @@ func handlePowerCommand(tv *control.LgTv, command string, detail string) error {
 	switch command {
 	case models.CommandOff:
 		return tv.TurnOff()
+	case models.CommandOn:
+		return tv.TurnOn()
 	}
 
 	return ErrCommandUnsupported

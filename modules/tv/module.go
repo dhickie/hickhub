@@ -24,7 +24,7 @@ func Launch(appConfig config.Config) {
 	for _, v := range devices {
 		if v.Type == config.TypeTv && v.SubType == config.SubTypeWebOsTv {
 			info := v.Info.(*config.WebOsTvDeviceInfo)
-			tv, err := control.NewTV(info.IPAddress)
+			tv, err := control.NewTV(info.IPAddress, info.MacAddress, info.SubnetMask)
 			if err != nil {
 				log.Error(fmt.Sprintf("Error creating TV at %v: %v", info.IPAddress, err.Error()))
 				continue
@@ -37,7 +37,7 @@ func Launch(appConfig config.Config) {
 				log.Warn(fmt.Sprintf("Unable to connect to TV at %v: %v", info.IPAddress, err.Error()))
 			}
 
-			tvMap[v.ID] = &tv
+			tvMap[v.ID] = tv
 			keyMap[v.ID] = info.ClientKey
 		}
 	}

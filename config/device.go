@@ -21,6 +21,8 @@ type Device struct {
 
 // WebOsTvDeviceInfo represents the extra information needed by a WebOS TV
 type WebOsTvDeviceInfo struct {
-	IPAddress string `json:"ip_address"`
-	ClientKey string `json:"client_key"`
+	IPAddress  string `json:"ip_address"`
+	ClientKey  string `json:"client_key"`
+	MacAddress string `json:"mac_address"`
+	SubnetMask string `json:"subnet_mask"`
 }

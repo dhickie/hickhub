@@ -37,12 +37,15 @@
                     "set"
                 ],
                 "power":[
-                    "off"
+                    "off",
+                    "on"
                 ]
             },
             "info": {
                 "ip_address":"192.168.1.130",
-                "client_key":"dc51c7c1b0d8cad03b4bdb648d450629"
+                "client_key":"dc51c7c1b0d8cad03b4bdb648d450629",
+                "mac_address":"38:8C:50:6B:CD:B1",
+                "subnet_mask":"255.255.255.0"
             }
         }
     ]
