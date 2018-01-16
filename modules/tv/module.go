@@ -31,7 +31,7 @@ func Launch(appConfig config.Config) {
 			}
 
 			// Try to connect to the TV using the client key from the config
-			_, err = tv.Connect(info.ClientKey)
+			_, err = tv.Connect(info.ClientKey, 1000)
 			if err != nil {
 				// No biggie if we can't connect - it might not be turned on
 				log.Warn(fmt.Sprintf("Unable to connect to TV at %v: %v", info.IPAddress, err.Error()))

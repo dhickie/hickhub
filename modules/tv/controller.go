@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/dhickie/go-lgtv/control"
 	"github.com/dhickie/hickhub/log"
@@ -39,51 +40,66 @@ func (c *tvController) subscriber(msg messaging.Message) {
 	deviceState := models.DeviceState{}
 
 	if tv, ok := c.Tvs[cmd.DeviceID]; ok {
-		switch cmd.State {
-		case models.StateVolume:
-			err = handleVolumeCommand(tv, cmd.Command, cmd.Detail)
-			if err == nil {
-				var volState models.VolumeState
-				volState, err = getVolumeState(tv)
+		clientKey := c.ClientKeys[cmd.DeviceID]
 
-				deviceState.Type = models.StateVolume
-				deviceState.State = volState
-			}
-		case models.StateChannel:
-			err = handleChannelCommand(tv, cmd.Command, cmd.Detail)
-			if err == nil {
-				var chanState models.ChannelState
-				chanState, err = getChannelState(tv)
-
-				deviceState.Type = models.StateChannel
-				deviceState.State = chanState
-			}
-		case models.StatePower:
-			err = handlePowerCommand(tv, cmd.Command, cmd.Detail)
-			if err == nil {
-				powerOn := false
-				if cmd.Command == models.CommandOn {
-					powerOn = true
-				}
-				deviceState.Type = models.StatePower
-				deviceState.State = models.PowerState{PowerOn: powerOn}
-			}
-		case models.StatePlayback:
-			err = handlePlaybackCommand(tv, cmd.Command, cmd.Detail)
-			// There's no device state for playback
-		case models.StateInput:
-			name, err := handleInputCommand(tv, cmd.Command, cmd.Detail)
-			if err == nil {
-				deviceState.Type = models.StateInput
-				deviceState.State = models.InputState{InputName: name}
+		// If this isn't a command to turn the TV on, then make sure we're connected first
+		if cmd.State != models.StatePower || cmd.Command != models.CommandOn {
+			newKey, err := tv.Connect(clientKey, 1000)
+			if err != nil {
+				errStr = fmt.Sprintf("An error occured trying to connect to the TV: %v", err)
+			} else if newKey != clientKey {
+				c.ClientKeys[cmd.DeviceID] = newKey
 			}
 		}
 
-		if err != nil {
-			errStr = fmt.Sprintf("An error occured performing the requested TV operation: %v", err)
-			log.Error(errStr)
-		} else {
-			success = true
+		// Figure out what state the command was for, if we didn't error trying to connect
+		if errStr == "" {
+			switch cmd.State {
+			case models.StateVolume:
+				err = handleVolumeCommand(tv, cmd.Command, cmd.Detail)
+				if err == nil {
+					var volState models.VolumeState
+					volState, err = getVolumeState(tv)
+
+					deviceState.Type = models.StateVolume
+					deviceState.State = volState
+				}
+			case models.StateChannel:
+				err = handleChannelCommand(tv, cmd.Command, cmd.Detail)
+				if err == nil {
+					var chanState models.ChannelState
+					chanState, err = getChannelState(tv)
+
+					deviceState.Type = models.StateChannel
+					deviceState.State = chanState
+				}
+			case models.StatePower:
+				err = handlePowerCommand(tv, clientKey, cmd.Command, cmd.Detail)
+				if err == nil {
+					powerOn := false
+					if cmd.Command == models.CommandOn {
+						powerOn = true
+					}
+					deviceState.Type = models.StatePower
+					deviceState.State = models.PowerState{PowerOn: powerOn}
+				}
+			case models.StatePlayback:
+				err = handlePlaybackCommand(tv, cmd.Command, cmd.Detail)
+				// There's no device state for playback
+			case models.StateInput:
+				name, err := handleInputCommand(tv, cmd.Command, cmd.Detail)
+				if err == nil {
+					deviceState.Type = models.StateInput
+					deviceState.State = models.InputState{InputName: name}
+				}
+			}
+
+			if err != nil {
+				errStr = fmt.Sprintf("An error occured performing the requested TV operation: %v", err)
+				log.Error(errStr)
+			} else {
+				success = true
+			}
 		}
 	} else {
 		errStr = fmt.Sprintf("Received message for unknown device ID: %v", cmd.DeviceID)
@@ -217,12 +233,27 @@ func getChannelState(tv *control.LgTv) (models.ChannelState, error) {
 	}, nil
 }
 
-func handlePowerCommand(tv *control.LgTv, command string, detail string) error {
+func handlePowerCommand(tv *control.LgTv, clientKey, command, detail string) error {
 	switch command {
 	case models.CommandOff:
 		return tv.TurnOff()
 	case models.CommandOn:
-		return tv.TurnOn()
+		err := tv.TurnOn()
+		if err != nil {
+			return err
+		}
+
+		// Try to connect once a second, for 4 seconds
+		ticker := time.NewTicker(1 * time.Second)
+		for i := 0; i < 4; i++ {
+			<-ticker.C
+			_, err = tv.Connect(clientKey, 500)
+			if err == nil {
+				return nil
+			}
+		}
+
+		return err
 	}
 
 	return ErrCommandUnsupported
