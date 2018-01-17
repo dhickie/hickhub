@@ -14,3 +14,9 @@ const (
 	CommandRewind      = "rewind"
 	CommandFastForward = "fastforward"
 )
+
+// SetChannelDetail is sent with commands to set the current channel
+type SetChannelDetail struct {
+	ChannelNumber int    `json:"channel_number"`
+	ChannelName   string `json:"channel_name"`
+}

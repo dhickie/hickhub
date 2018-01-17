@@ -189,12 +189,37 @@ func handleChannelCommand(tv *control.LgTv, command string, detail string) error
 	case models.CommandDown:
 		return tv.ChannelDown()
 	case models.CommandSet:
-		var val int
-		err := json.Unmarshal([]byte(detail), &val)
+		val := new(models.SetChannelDetail)
+		err := json.Unmarshal([]byte(detail), val)
 		if err != nil {
 			return err
 		}
-		return tv.SetChannel(val)
+
+		// Get the list of possible channels
+		channels, err := tv.ListChannels()
+		if err != nil {
+			return err
+		}
+
+		// Also get the list of possible apps
+		apps, err := tv.ListInstalledApps()
+		if err != nil {
+			return err
+		}
+
+		// Match the request to closest channel we can find
+		targetChannel, chanErr := utils.MatchChannel(*val, channels)
+		// Also try to match to an app, like netflix
+		targetApp, appErr := utils.MatchApp(val.ChannelName, apps)
+
+		if chanErr != nil && appErr != nil {
+			return chanErr
+		} else if appErr != nil {
+			return tv.SetChannel(targetChannel.ChannelNumber)
+		}
+
+		_, err = tv.LaunchApp(targetApp.ID)
+		return err
 	case models.CommandAdjust:
 		// Work out how many channels to change by
 		var val int

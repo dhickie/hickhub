@@ -5,6 +5,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/dhickie/hickhub/models"
+
 	"github.com/dhickie/go-lgtv/control"
 	"github.com/renstrom/fuzzysearch/fuzzy"
 )
@@ -29,27 +31,20 @@ func MatchInput(inputName string, inputs []control.Input) (control.Input, error)
 	idRanks := fuzzy.RankFind(stripped, ids)
 	labelRanks := fuzzy.RankFind(stripped, labels)
 
-	// Iterate through both and pick the one with the lowest distance
-	var closestMatch = fuzzy.Rank{Distance: 99999}
-	var matchFound = false
-	var isLabel = false
-	for _, v := range idRanks {
-		matchFound = true
-		if v.Distance < closestMatch.Distance {
-			closestMatch = v
-		}
-	}
-	for _, v := range labelRanks {
-		matchFound = true
-		if v.Distance < closestMatch.Distance {
-			isLabel = true
-			closestMatch = v
-		}
+	// If no match was found at all, then return an error
+	if len(idRanks) == 0 && len(labelRanks) == 0 {
+		return control.Input{}, ErrNoMatchFound
 	}
 
-	// If no match was found at all, then return an error
-	if !matchFound {
-		return control.Input{}, ErrNoMatchFound
+	// Iterate through both and pick the one with the lowest distance
+	var closestIDMatch = findLowestDistance(idRanks)
+	var closestLabelMatch = findLowestDistance(labelRanks)
+
+	isLabel := false
+	closestMatch := closestIDMatch
+	if closestLabelMatch.Distance < closestIDMatch.Distance {
+		isLabel = true
+		closestMatch = closestLabelMatch
 	}
 
 	// Get the input that had this as its closest match
@@ -68,6 +63,67 @@ func MatchInput(inputName string, inputs []control.Input) (control.Input, error)
 	return control.Input{}, ErrNoMatchFound
 }
 
+// MatchChannel will find the closest matched channel based on the info in target
+func MatchChannel(target models.SetChannelDetail, channels []control.Channel) (control.Channel, error) {
+	// If the target has a channel number, then just use that
+	if target.ChannelNumber > 0 {
+		for _, v := range channels {
+			if v.ChannelNumber == target.ChannelNumber {
+				return v, nil
+			}
+
+		}
+		return control.Channel{}, ErrNoMatchFound
+	}
+
+	// Strip whitespace out of the target channel name
+	stripped := stripWhitespace(target.ChannelName)
+
+	// Make a list of channel names
+	names := make([]string, 0)
+	for _, v := range channels {
+		names = append(names, v.ChannelName)
+	}
+
+	// Rank the names against the target & find the closest match
+	ranks := fuzzy.RankFind(stripped, names)
+	closestMatch := findLowestDistance(ranks)
+
+	// Go through the channels until we find this one
+	for _, v := range channels {
+		if v.ChannelName == closestMatch.Target {
+			return v, nil
+		}
+	}
+
+	return control.Channel{}, ErrNoMatchFound
+}
+
+// MatchApp will find the closest matched app based on the target app name
+func MatchApp(appName string, apps []control.App) (control.App, error) {
+	// Make a list of app names
+	appNames := make([]string, 0)
+	for _, v := range apps {
+		appNames = append(appNames, v.Name)
+	}
+
+	// Strip whitespace out of the target app name
+	stripped := stripWhitespace(appName)
+
+	// Rank the app names & find the closest match
+	ranks := fuzzy.RankFind(stripped, appNames)
+	closestMatch := findLowestDistance(ranks)
+
+	// Go through the apps and find the one with this name
+	for _, v := range apps {
+		if v.Name == closestMatch.Target {
+			return v, nil
+		}
+	}
+
+	return control.App{}, ErrNoMatchFound
+}
+
 func stripWhitespace(input string) string {
 	return strings.Map(func(r rune) rune {
 		if unicode.IsSpace(r) {
@@ -75,4 +131,15 @@ func stripWhitespace(input string) string {
 		}
 		return r
 	}, input)
+}
+
+func findLowestDistance(ranks []fuzzy.Rank) fuzzy.Rank {
+	var closestMatch = fuzzy.Rank{Distance: 999999}
+	for _, v := range ranks {
+		if v.Distance < closestMatch.Distance {
+			closestMatch = v
+		}
+	}
+
+	return closestMatch
 }
