@@ -17,6 +17,7 @@ const (
 
 // SetChannelDetail is sent with commands to set the current channel
 type SetChannelDetail struct {
-	ChannelNumber int    `json:"channel_number"`
-	ChannelName   string `json:"channel_name"`
+	ExactChannelNumber     int    `json:"exact_channel_number"`
+	ExactChannelName       string `json:"exact_channel_name"`
+	FuzzyChannelIdentifier string `json:"fuzzy_channel_identifier"`
 }

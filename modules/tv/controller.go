@@ -210,7 +210,7 @@ func handleChannelCommand(tv *control.LgTv, command string, detail string) error
 		// Match the request to closest channel we can find
 		targetChannel, chanErr := utils.MatchChannel(*val, channels)
 		// Also try to match to an app, like netflix
-		targetApp, appErr := utils.MatchApp(val.ChannelName, apps)
+		targetApp, appErr := utils.MatchApp(val.FuzzyChannelIdentifier, apps)
 
 		if chanErr != nil && appErr != nil {
 			return chanErr

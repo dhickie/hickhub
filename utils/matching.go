@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -65,10 +66,17 @@ func MatchInput(inputName string, inputs []control.Input) (control.Input, error)
 
 // MatchChannel will find the closest matched channel based on the info in target
 func MatchChannel(target models.SetChannelDetail, channels []control.Channel) (control.Channel, error) {
-	// If the target has a channel number, then just use that
-	if target.ChannelNumber > 0 {
+	// If the target has an exact channel number or name, then just use that
+	if target.ExactChannelNumber > 0 || target.ExactChannelName != "" {
+		isName := true
+		if target.ExactChannelNumber > 0 {
+			isName = false
+		}
+
 		for _, v := range channels {
-			if v.ChannelNumber == target.ChannelNumber {
+			if isName && v.ChannelName == target.ExactChannelName {
+				return v, nil
+			} else if v.ChannelNumber == target.ExactChannelNumber {
 				return v, nil
 			}
 
@@ -76,13 +84,28 @@ func MatchChannel(target models.SetChannelDetail, channels []control.Channel) (c
 		return control.Channel{}, ErrNoMatchFound
 	}
 
-	// Strip whitespace out of the target channel name
-	stripped := stripWhitespace(target.ChannelName)
+	// If the fuzzy channel identifier is a number, then use that
+	if val, err := strconv.Atoi(target.FuzzyChannelIdentifier); err == nil {
+		for _, v := range channels {
+			if v.ChannelNumber == val {
+				return v, nil
+			}
+		}
+
+		return control.Channel{}, ErrNoMatchFound
+	}
+
+	// The fuzzy matching doesn't play nicely with whitespace or differences in character case.
+	// Convert all strings to upper case and remove all whitespace
+	stripped := strings.ToUpper(stripWhitespace(target.FuzzyChannelIdentifier))
 
 	// Make a list of channel names
 	names := make([]string, 0)
+	nameMap := make(map[string]string)
 	for _, v := range channels {
-		names = append(names, v.ChannelName)
+		channelName := strings.ToUpper(stripWhitespace(v.ChannelName))
+		names = append(names, channelName)
+		nameMap[channelName] = v.ChannelName
 	}
 
 	// Rank the names against the target & find the closest match
@@ -91,7 +114,7 @@ func MatchChannel(target models.SetChannelDetail, channels []control.Channel) (c
 
 	// Go through the channels until we find this one
 	for _, v := range channels {
-		if v.ChannelName == closestMatch.Target {
+		if v.ChannelName == nameMap[closestMatch.Target] {
 			return v, nil
 		}
 	}
@@ -101,14 +124,18 @@ func MatchChannel(target models.SetChannelDetail, channels []control.Channel) (c
 
 // MatchApp will find the closest matched app based on the target app name
 func MatchApp(appName string, apps []control.App) (control.App, error) {
+	// The fuzzy matching doesn't play nicely with whitespace or differences in character case.
+	// Convert all strings to upper case and remove all whitespace
+	stripped := strings.ToUpper(stripWhitespace(appName))
+
 	// Make a list of app names
 	appNames := make([]string, 0)
+	nameMap := make(map[string]string)
 	for _, v := range apps {
-		appNames = append(appNames, v.Name)
+		appName := strings.ToUpper(stripWhitespace(v.Name))
+		appNames = append(appNames, appName)
+		nameMap[appName] = v.Name
 	}
-
-	// Strip whitespace out of the target app name
-	stripped := stripWhitespace(appName)
 
 	// Rank the app names & find the closest match
 	ranks := fuzzy.RankFind(stripped, appNames)
@@ -116,7 +143,7 @@ func MatchApp(appName string, apps []control.App) (control.App, error) {
 
 	// Go through the apps and find the one with this name
 	for _, v := range apps {
-		if v.Name == closestMatch.Target {
+		if v.Name == nameMap[closestMatch.Target] {
 			return v, nil
 		}
 	}
