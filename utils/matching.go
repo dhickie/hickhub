@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"unicode"
@@ -9,6 +10,7 @@ import (
 	"github.com/dhickie/hickhub/models"
 
 	"github.com/dhickie/go-lgtv/control"
+	"github.com/divan/num2words"
 	"github.com/renstrom/fuzzysearch/fuzzy"
 )
 
@@ -95,28 +97,33 @@ func MatchChannel(target models.SetChannelDetail, channels []control.Channel) (c
 		return control.Channel{}, ErrNoMatchFound
 	}
 
+	channelMap := make(map[string]control.Channel)
+	names := make([]string, 0)
+
+	// Build a list of possible channel names by converting integers in to words
+	for _, channel := range channels {
+		possibleChannelNames := buildPossibleChannelNames(channel.ChannelName)
+
+		// Add each one to the map between possible channel names and actual channels
+		for _, name := range possibleChannelNames {
+			if _, ok := channelMap[name]; !ok {
+				channelMap[name] = channel
+				names = append(names, name)
+			}
+		}
+	}
+
 	// The fuzzy matching doesn't play nicely with whitespace or differences in character case.
 	// Convert all strings to upper case and remove all whitespace
 	stripped := strings.ToUpper(stripWhitespace(target.FuzzyChannelIdentifier))
-
-	// Make a list of channel names
-	names := make([]string, 0)
-	nameMap := make(map[string]string)
-	for _, v := range channels {
-		channelName := strings.ToUpper(stripWhitespace(v.ChannelName))
-		names = append(names, channelName)
-		nameMap[channelName] = v.ChannelName
-	}
 
 	// Rank the names against the target & find the closest match
 	ranks := fuzzy.RankFind(stripped, names)
 	closestMatch := findLowestDistance(ranks)
 
 	// Go through the channels until we find this one
-	for _, v := range channels {
-		if v.ChannelName == nameMap[closestMatch.Target] {
-			return v, nil
-		}
+	if val, ok := channelMap[closestMatch.Target]; ok {
+		return val, nil
 	}
 
 	return control.Channel{}, ErrNoMatchFound
@@ -169,4 +176,61 @@ func findLowestDistance(ranks []fuzzy.Rank) fuzzy.Rank {
 	}
 
 	return closestMatch
+}
+
+// Builds a list of possible channel names based on the input
+func buildPossibleChannelNames(channelName string) []string {
+	possibilities := make([]string, 0)
+	stripped := strings.ToUpper(stripWhitespace(channelName))
+
+	possibilities = append(possibilities, stripped)
+
+	// Go through each character, and see if it's a number
+	// If it is, then find the end of the number and then convert to an int
+	// Then convert it in to a "spelled out" version of the number as well
+	intStart := -1
+	for i, v := range stripped {
+		if _, err := strconv.Atoi(fmt.Sprintf("%c", v)); err == nil {
+			// Work out whether we're at the start of a string, or in the middle/end
+			if intStart < 0 {
+				// This is the start, set the start of the integer
+				intStart = i
+			}
+		} else {
+			// This character wasn't a number, see if we were part way through scanning one
+			if intStart >= 0 {
+				// Extract the whole integer, convert it to a word, and insert it in to the channel name
+				converted := convertIntToWordInString(stripped, intStart, i)
+				possibilities = append(possibilities, converted)
+				intStart = -1
+			}
+		}
+	}
+
+	// Check whether the integer went right to the end
+	if intStart >= 0 {
+		converted := convertIntToWordInString(stripped, intStart, len(stripped))
+		possibilities = append(possibilities, converted)
+	}
+
+	return possibilities
+}
+
+func convertIntToWordInString(input string, intStart, intEnd int) string {
+	var numString string
+	if intEnd < len(input) {
+		numString = input[intStart:intEnd]
+	} else {
+		numString = input[intStart:]
+	}
+
+	num, _ := strconv.Atoi(numString)
+	word := num2words.Convert(num)
+
+	converted := input[0:intStart] + strings.ToUpper(stripWhitespace(word))
+	if intEnd < len(input) {
+		converted = converted + input[intEnd:]
+	}
+
+	return converted
 }

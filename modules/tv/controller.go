@@ -201,25 +201,14 @@ func handleChannelCommand(tv *control.LgTv, command string, detail string) error
 			return err
 		}
 
-		// Also get the list of possible apps
-		apps, err := tv.ListInstalledApps()
+		// Match the request to closest channel we can find
+		targetChannel, err := utils.MatchChannel(*val, channels)
+
 		if err != nil {
 			return err
 		}
 
-		// Match the request to closest channel we can find
-		targetChannel, chanErr := utils.MatchChannel(*val, channels)
-		// Also try to match to an app, like netflix
-		targetApp, appErr := utils.MatchApp(val.FuzzyChannelIdentifier, apps)
-
-		if chanErr != nil && appErr != nil {
-			return chanErr
-		} else if appErr != nil {
-			return tv.SetChannel(targetChannel.ChannelNumber)
-		}
-
-		_, err = tv.LaunchApp(targetApp.ID)
-		return err
+		return tv.SetChannel(targetChannel.ChannelNumber)
 	case models.CommandAdjust:
 		// Work out how many channels to change by
 		var val int
@@ -308,20 +297,33 @@ func handleInputCommand(tv *control.LgTv, command string, detail string) (string
 			return "", err
 		}
 
-		// Find the match closest to the specified target
-		var target string
-		err = json.Unmarshal([]byte(detail), &target)
-		if err != nil {
-			return "", err
-		}
-		match, err := utils.MatchInput(target, inputs)
+		// Also get the list of installed apps
+		apps, err := tv.ListInstalledApps()
 		if err != nil {
 			return "", err
 		}
 
-		// Set the input to the closest match
-		err = tv.SwitchInput(match.ID)
-		return match.ID, err
+		// Find the closest matching input
+		var target string
+		if err = json.Unmarshal([]byte(detail), &target); err != nil {
+			return "", err
+		}
+		if input, err := utils.MatchInput(target, inputs); err == nil {
+			// Switch to the input if a match was found
+			err = tv.SwitchInput(input.ID)
+			return input.ID, err
+		} else if err != utils.ErrNoMatchFound {
+			return "", err
+		}
+
+		// If no matching input was found, then look for a matching app
+		if err == utils.ErrNoMatchFound {
+			app, err := utils.MatchApp(target, apps)
+			if err != nil {
+				return "", err
+			}
+			return tv.LaunchApp(app.ID)
+		}
 	}
 
 	return "", ErrCommandUnsupported
