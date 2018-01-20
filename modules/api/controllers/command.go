@@ -12,6 +12,7 @@ import (
 	"github.com/dhickie/hickhub/config"
 	"github.com/dhickie/hickhub/messaging"
 	"github.com/dhickie/hickhub/messaging/payloads"
+	"github.com/dhickie/hickhub/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -82,6 +83,12 @@ func (c *CommandController) ControlDevice(w http.ResponseWriter, r *http.Request
 	result := new(payloads.CommandResultPayload)
 	if err = json.Unmarshal([]byte(reply.Payload), result); err != nil {
 		http.Error(w, ErrUnableToReadResult.Error(), 500)
+		return
+	}
+
+	// If the result was a failure, then return bad request if it was due to a channel/input/app not being found
+	if !result.Success && result.Error == utils.ErrNoMatchFound.Error() {
+		http.Error(w, "The requested resource could not be found.", 400)
 		return
 	}
 
