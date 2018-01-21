@@ -36,6 +36,9 @@
                 "input":[
                     "set"
                 ],
+                "app":[
+                    "launch"
+                ],
                 "power":[
                     "off",
                     "on"
