@@ -7,6 +7,7 @@ const (
 	StateChannel  = "channel"
 	StatePlayback = "playback"
 	StateInput    = "input"
+	StateApp      = "app"
 )
 
 // DeviceState represents the current state of a particular state component of the device
@@ -35,4 +36,9 @@ type ChannelState struct {
 // InputState represents the state of a device with input state
 type InputState struct {
 	InputName string `json:"input_name"`
+}
+
+// AppState represents details of which app is currently running
+type AppState struct {
+	AppName string `json:"app_name"`
 }

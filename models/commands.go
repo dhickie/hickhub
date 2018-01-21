@@ -13,6 +13,7 @@ const (
 	CommandPause       = "pause"
 	CommandRewind      = "rewind"
 	CommandFastForward = "fastforward"
+	CommandLaunch      = "launch"
 )
 
 // SetChannelDetail is sent with commands to set the current channel

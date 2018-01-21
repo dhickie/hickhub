@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/dhickie/go-lgtv/control"
 	"github.com/dhickie/hickhub/log"
@@ -65,10 +64,17 @@ func (c *tvController) subscriber(msg messaging.Message) {
 					deviceState.State = volState
 				}
 			case models.StateChannel:
-				err = handleChannelCommand(tv, cmd.Command, cmd.Detail)
+				var newChannel *control.Channel
+				newChannel, err = handleChannelCommand(tv, cmd.Command, cmd.Detail)
 				if err == nil {
 					var chanState models.ChannelState
-					chanState, err = getChannelState(tv)
+					// If the channel command didn't return the new channel, then try to find it
+					if newChannel == nil {
+						chanState, err = getChannelState(tv)
+					} else {
+						chanState.ChannelName = newChannel.ChannelName
+						chanState.ChannelNumber = newChannel.ChannelNumber
+					}
 
 					deviceState.Type = models.StateChannel
 					deviceState.State = chanState
@@ -87,10 +93,18 @@ func (c *tvController) subscriber(msg messaging.Message) {
 				err = handlePlaybackCommand(tv, cmd.Command, cmd.Detail)
 				// There's no device state for playback
 			case models.StateInput:
-				name, err := handleInputCommand(tv, cmd.Command, cmd.Detail)
+				var name string
+				name, err = handleInputCommand(tv, cmd.Command, cmd.Detail)
 				if err == nil {
 					deviceState.Type = models.StateInput
 					deviceState.State = models.InputState{InputName: name}
+				}
+			case models.StateApp:
+				var name string
+				name, err = handleAppCommand(tv, cmd.Command, cmd.Detail)
+				if err == nil {
+					deviceState.Type = models.StateApp
+					deviceState.State = models.AppState{AppName: name}
 				}
 			}
 
@@ -182,45 +196,45 @@ func getVolumeState(tv *control.LgTv) (models.VolumeState, error) {
 	}, nil
 }
 
-func handleChannelCommand(tv *control.LgTv, command string, detail string) error {
+func handleChannelCommand(tv *control.LgTv, command string, detail string) (*control.Channel, error) {
 	switch command {
 	case models.CommandUp:
-		return tv.ChannelUp()
+		return nil, tv.ChannelUp()
 	case models.CommandDown:
-		return tv.ChannelDown()
+		return nil, tv.ChannelDown()
 	case models.CommandSet:
 		val := new(models.SetChannelDetail)
 		err := json.Unmarshal([]byte(detail), val)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// Get the list of possible channels
 		channels, err := tv.ListChannels()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// Match the request to closest channel we can find
 		targetChannel, err := utils.MatchChannel(*val, channels)
 
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		return tv.SetChannel(targetChannel.ChannelNumber)
+		return &targetChannel, tv.SetChannel(targetChannel.ChannelNumber)
 	case models.CommandAdjust:
 		// Work out how many channels to change by
 		var val int
 		err := json.Unmarshal([]byte(detail), &val)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// Get the current channel
 		channel, err := tv.GetCurrentChannel()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// Adjust the channel
@@ -228,10 +242,10 @@ func handleChannelCommand(tv *control.LgTv, command string, detail string) error
 		if newChannel < 0 {
 			newChannel = 0
 		}
-		return tv.SetChannel(newChannel)
+		return nil, tv.SetChannel(newChannel)
 	}
 
-	return ErrCommandUnsupported
+	return nil, ErrCommandUnsupported
 }
 
 func getChannelState(tv *control.LgTv) (models.ChannelState, error) {
@@ -257,17 +271,7 @@ func handlePowerCommand(tv *control.LgTv, clientKey, command, detail string) err
 			return err
 		}
 
-		// Try to connect once a second, for 4 seconds
-		ticker := time.NewTicker(1 * time.Second)
-		for i := 0; i < 4; i++ {
-			<-ticker.C
-			_, err = tv.Connect(clientKey, 500)
-			if err == nil {
-				return nil
-			}
-		}
-
-		return err
+		return nil
 	}
 
 	return ErrCommandUnsupported
@@ -297,33 +301,47 @@ func handleInputCommand(tv *control.LgTv, command string, detail string) (string
 			return "", err
 		}
 
-		// Also get the list of installed apps
-		apps, err := tv.ListInstalledApps()
-		if err != nil {
-			return "", err
-		}
-
 		// Find the closest matching input
 		var target string
 		if err = json.Unmarshal([]byte(detail), &target); err != nil {
 			return "", err
 		}
-		if input, err := utils.MatchInput(target, inputs); err == nil {
+
+		input, err := utils.MatchInput(target, inputs)
+		if err == nil {
 			// Switch to the input if a match was found
 			err = tv.SwitchInput(input.ID)
 			return input.ID, err
-		} else if err != utils.ErrNoMatchFound {
+		}
+
+		return "", err
+	}
+
+	return "", ErrCommandUnsupported
+}
+
+func handleAppCommand(tv *control.LgTv, command string, detail string) (string, error) {
+	switch command {
+	case models.CommandLaunch:
+		// Get the current list of possible apps
+		apps, err := tv.ListInstalledApps()
+		if err != nil {
 			return "", err
 		}
 
-		// If no matching input was found, then look for a matching app
-		if err == utils.ErrNoMatchFound {
-			app, err := utils.MatchApp(target, apps)
-			if err != nil {
-				return "", err
-			}
-			return tv.LaunchApp(app.ID)
+		// Find the closest matching app
+		var target string
+		if err = json.Unmarshal([]byte(detail), &target); err != nil {
+			return "", err
 		}
+
+		app, err := utils.MatchApp(target, apps)
+		if err == nil {
+			tv.LaunchApp(app.ID)
+			return app.Name, err
+		}
+
+		return "", err
 	}
 
 	return "", ErrCommandUnsupported
