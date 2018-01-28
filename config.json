@@ -2,11 +2,10 @@
     "api":{
         "port":10001
     },
-    "authentication":{
-        "key":"test"
-    },
     "messaging":{
-        "server":""
+        "messaging_server":"nats://messaging.hickhub.com",
+        "api_server":"http://api.hickhub.com",
+        "auth_key": ""
     },
     "devices":[
         {

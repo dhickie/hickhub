@@ -3,6 +3,7 @@ package messenger
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,6 +13,10 @@ import (
 	"github.com/dhickie/hickhub/log"
 	"github.com/nats-io/go-nats"
 )
+
+const subjectPath = "/user/messaging/subject"
+
+var errCantGetSubject = errors.New("Unable to get messaging subject from API")
 
 // The messenger module subscribes to messages from the cloud NATS server,
 // calling methods on the API when it receives them.
@@ -29,6 +34,10 @@ type message struct {
 	Status string `json:"status"`
 }
 
+type subjectResponse struct {
+	Subject string `json:"subject"`
+}
+
 var mod module
 
 // Launch launches the messenger module.
@@ -36,10 +45,18 @@ func Launch(appConfig config.Config) {
 	// Connect to the NATS server
 	log.Info("Launching messenger module")
 	log.Info("Connecting to messenger server")
-	server := appConfig.Messaging.Server
-	nc, err := nats.Connect(server)
+	server := appConfig.Messaging.MessagingServer
+	authToken := appConfig.Messaging.AuthKey
+	nc, err := nats.Connect(server, nats.Token(authToken))
 	if err != nil {
 		panic("Failed to conntect to messaging server")
+	}
+
+	// Query the HickHub API to get this hub's messaging subject
+	log.Info("Getting messaging subject from API")
+	subj, err := getMessagingSubject(appConfig.Messaging.APIServer, authToken)
+	if err != nil {
+		panic("Failed to get messaging subject")
 	}
 
 	// Create the API client
@@ -51,11 +68,44 @@ func Launch(appConfig config.Config) {
 
 	// Subscribe to the topic
 	log.Info("Subscribing to messenger subject")
-	sub, err := nc.Subscribe(appConfig.Auth.Key, mod.internetSubscriber)
+	sub, err := nc.Subscribe(subj, mod.internetSubscriber)
 	if err != nil {
 		panic("Failed to subscribe to messaging topic")
 	}
 	mod.NatsSub = sub
+}
+
+func getMessagingSubject(apiURL, authToken string) (string, error) {
+	client := new(http.Client)
+	path := apiURL + subjectPath
+	req, err := http.NewRequest("GET", path, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Authorization", "bearer "+authToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != 200 {
+		return "", errCantGetSubject
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	subjectResponse := new(subjectResponse)
+	err = json.Unmarshal(body, subjectResponse)
+	if err != nil {
+		return "", err
+	}
+
+	return subjectResponse.Subject, nil
 }
 
 func (module *module) internetSubscriber(m *nats.Msg) {

@@ -15,7 +15,6 @@ var (
 // Config represents the overall config of the application
 type Config struct {
 	API       APIConfig       `json:"api"`
-	Auth      AuthConfig      `json:"authentication"`
 	Messaging MessagingConfig `json:"messaging"`
 	Devices   []Device        `json:"devices"`
 }
