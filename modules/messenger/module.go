@@ -27,6 +27,11 @@ type module struct {
 	NatsSub   *nats.Subscription
 }
 
+type hickHubMessage struct {
+	ID   int    `json:"id"`
+	Data []byte `json:"data"` // message object encoded as binary
+}
+
 type message struct {
 	Method string `json:"method"`
 	Path   string `json:"path"`
@@ -109,11 +114,19 @@ func getMessagingSubject(apiURL, authToken string) (string, error) {
 }
 
 func (module *module) internetSubscriber(m *nats.Msg) {
-	// Decode the message
-	msg := new(message)
-	err := json.Unmarshal(m.Data, msg)
+	// Decode the hickhub message
+	hhMsg := new(hickHubMessage)
+	err := json.Unmarshal(m.Data, hhMsg)
 	if err != nil {
 		log.Error(fmt.Sprintf("An error occured processing an internet message: %v", err.Error()))
+		return
+	}
+
+	// Decode the actual request
+	msg := new(message)
+	err = json.Unmarshal(hhMsg.Data, msg)
+	if err != nil {
+		log.Error(fmt.Sprintf("An error occured processing the internet request: %v", err.Error()))
 		return
 	}
 
@@ -148,11 +161,21 @@ func (module *module) internetSubscriber(m *nats.Msg) {
 	}
 	msgJSON, err := json.Marshal(reply)
 	if err != nil {
-		log.Error(fmt.Sprintf("An error occured trying to mashal a reply message: %v", err.Error()))
+		log.Error(fmt.Sprintf("An error occured trying to mashal a reply JSON: %v", err.Error()))
 		return
 	}
 
-	err = mod.NatsConn.Publish(m.Reply, msgJSON)
+	hhReply := hickHubMessage{
+		ID:   hhMsg.ID,
+		Data: msgJSON,
+	}
+	replyJSON, err := json.Marshal(hhReply)
+	if err != nil {
+		log.Error(fmt.Sprintf("An error occured trying to marshal the reply message: %v", err.Error()))
+		return
+	}
+
+	err = mod.NatsConn.Publish(m.Reply, replyJSON)
 	if err != nil {
 		log.Error(fmt.Sprintf("An error occured trying to publish a reply: %v", err.Error()))
 		return
