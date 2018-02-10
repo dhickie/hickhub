@@ -54,7 +54,7 @@ func Launch(appConfig config.Config) {
 	authToken := appConfig.Messaging.AuthKey
 	nc, err := nats.Connect(server, nats.Token(authToken))
 	if err != nil {
-		panic("Failed to conntect to messaging server")
+		panic("Failed to conntect to messaging server: " + err.Error())
 	}
 
 	// Query the HickHub API to get this hub's messaging subject
